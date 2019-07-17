@@ -1,0 +1,71 @@
+---
+title: "Shiny App"
+author: "Alia Eccles"
+date: "July 17, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Shiny ui.r
+
+```{r ui.r}
+library(shiny)
+library(ggplot2)
+ui <- fluidPage(
+  titlePanel("Box Plot Data Analysis"),
+  mainPanel("Documentation: Click a Box Plot to see data drill down. 
+            This application shows a box plot of Sepal Length set by Species.
+            A user wishing to learn more about a given species can provide input by clicking on the respective plot 
+            to see the top 10 rows of the data set specific to that species.
+            The server calculates the appropriate 10 rows."),
+  #have the plot show rows when the user clicks on the appropriate graph
+  fluidRow(
+        column(6,
+           plotOutput("plot1", click = "plot1_click")
+    ),
+    column(7,
+           br(), br(), br(),
+           htmlOutput("x_value"),
+           verbatimTextOutput("selected_rows")
+    ))
+)
+```
+
+## Shiny Server.r
+
+
+
+```{r server.r}
+server <- function(input, output) {
+  #plot the species vs. sepal length in a histogram 
+  output$plot1 <- renderPlot({
+    plot(iris$Species, iris$Sepal.Length)
+  })
+  
+  # Print the name of the x value
+  output$x_value <- renderText({
+    if (is.null(input$plot1_click$x)) return("")
+    else {
+      lvls <- levels(iris$Species)
+      name <- lvls[round(input$plot1_click$x)]
+      HTML("You've selected <code>", name, "</code>",
+           "<br><br>Here are the first 10 rows that ",
+           "match that category:")
+    }
+  })
+  
+  # Print the rows of the data frame which match the x value
+  output$selected_rows <- renderPrint({
+    if (is.null(input$plot1_click$x)) return()
+    else {
+      keeprows <- round(input$plot1_click$x) == as.numeric(iris$Species)
+      head(iris[keeprows, ], 10)
+    }
+  })
+}
+
+```
+
